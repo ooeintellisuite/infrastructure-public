@@ -9,53 +9,53 @@
   pre_tasks:
     - name: Set OS-specific variables for Ubuntu
       set_fact:
-        os_name: "ubuntu"
+        os_name: 'ubuntu'
         base_packages:
           - ca-certificates
           - curl
           - gnupg
           - software-properties-common
-        kubic_repo_url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/Release.key"
+        kubic_repo_url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/Release.key'
         kubic_repo_content: |
           deb [signed-by=/etc/apt/keyrings/kubic.asc] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_distribution_version }}/ /
       when: ansible_distribution == "Ubuntu"
 
     - name: Set OS-specific variables for Debian
       set_fact:
-        os_name: "debian"
+        os_name: 'debian'
         base_packages:
           - ca-certificates
           - curl
           - gnupg
-        kubic_repo_url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_{{ ansible_distribution_version }}/Release.key"
+        kubic_repo_url: 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_{{ ansible_distribution_version }}/Release.key'
         kubic_repo_content: |
           deb [signed-by=/etc/apt/keyrings/kubic.asc] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_{{ ansible_distribution_version }}/ /
       when: ansible_distribution == "Debian"
 
     - name: Display detected OS
       debug:
-        msg: "Detected OS: {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ os_name }})"
+        msg: 'Detected OS: {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ os_name }})'
 
   tasks:
     - name: Ensure required base packages
       apt:
-        name: "{{ base_packages }}"
+        name: '{{ base_packages }}'
         state: present
         update_cache: true
 
     - name: Optionally add Kubic repo (newer Podman) - key
       when: use_kubic_repo
       ansible.builtin.get_url:
-        url: "{{ kubic_repo_url }}"
+        url: '{{ kubic_repo_url }}'
         dest: /etc/apt/keyrings/kubic.asc
-        mode: "0644"
+        mode: '0644'
 
     - name: Optionally add Kubic repo (newer Podman) - sources.list
       when: use_kubic_repo
       copy:
         dest: /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-        mode: "0644"
-        content: "{{ kubic_repo_content }}"
+        mode: '0644'
+        content: '{{ kubic_repo_content }}'
 
     - name: Update apt cache
       apt:
@@ -78,7 +78,7 @@
         regexp: '^#?\s*runtime\s*=\s*".*"'
         line: 'runtime = "crun"'
         create: yes
-        mode: "0644"
+        mode: '0644'
         backup: no
 
     - name: Verify podman is installed
@@ -90,32 +90,29 @@
       debug:
         var: podman_version.stdout
 
-    - name: Prepare podman info format string
-      set_fact:
-        podman_info_format_literal: '{{ "{{.Host.ContainerStore}}" }}'
-
-    - name: Log podman info format string
-      debug:
-        msg: "Using podman info format: {{ podman_info_format_literal }}"
-
-    - name: Ensure rootless prereqs are detected
+    - name: Check rootless prerequisites
       command:
         argv:
           - podman
           - info
           - --format
-          - "{{ podman_info_format_literal }}"
+          - "{{ '{{.Store.ContainerStore}}' }}"
       register: podman_info
       changed_when: false
       environment:
-        XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid | default(1000) }}"
+        XDG_RUNTIME_DIR: '/run/user/{{ ansible_user_uid | default(1000) }}'
       ignore_errors: true
+
+    - name: Display container store info
+      debug:
+        msg: 'Container store status: {{ podman_info.stdout }}'
+      when: podman_info.stdout is defined
 
     - name: Optional - set sensible log size limit (avoid runaway logs)
       blockinfile:
         path: /etc/containers/containers.conf
         create: yes
-        mode: "0644"
+        mode: '0644'
         block: |
           [engine]
           log_driver = "journald"
