@@ -1,0 +1,11 @@
+set tabstop=2
+set shiftwidth=2
+set expandtab
+set autoindent
+set fileformat=unix
+set encoding=utf-8
+set ruler
+set number
+set wrap
+set textwidth=80
+set colorcolumn=100

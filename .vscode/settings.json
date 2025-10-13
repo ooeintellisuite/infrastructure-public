@@ -1,0 +1,32 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": ["source.fixAll.eslint", "source.organizeImports", "source.fixAll"],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4
+  },
+  "[csharp]": {
+    "editor.defaultFormatter": "csharpier.csharpier-vscode"
+  },
+  "[powershell]": {
+    "editor.defaultFormatter": "ms-vscode.powershell"
+  },
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform"
+  },
+  "[terraform-vars]": {
+    "editor.defaultFormatter": "hashicorp.terraform"
+  },
+  "[cucumber]": {
+    "editor.wordWrap": "off",
+    "editor.defaultFormatter": "CucumberOpen.cucumber-official"
+  },
+  "[svelte]": { "editor.defaultFormatter": "svelte.svelte-vscode" },
+  "[prisma]": { "editor.defaultFormatter": "Prisma.prisma" },
+  "ansible.python.interpreterPath": "/bin/python3",
+  "sql-formatter.dialect": "postgresql",
+  "[sql]": {
+    "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
+  }
+}
