@@ -99,7 +99,12 @@
         msg: "Using podman info format: {{ podman_info_format_literal }}"
 
     - name: Ensure rootless prereqs are detected
-      command: podman info --format '{{.Host.ContainerStore}}'
+      command:
+        argv:
+          - podman
+          - info
+          - --format
+          - "{{ podman_info_format_literal }}"
       register: podman_info
       changed_when: false
       environment:
