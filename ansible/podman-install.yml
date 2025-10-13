@@ -70,7 +70,6 @@
           - fuse-overlayfs
           - podman-docker
           - crun
-          - podman-tui
         state: present
 
     - name: Set crun as default OCI runtime (if available)
