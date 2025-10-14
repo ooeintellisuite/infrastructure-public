@@ -42,6 +42,36 @@
         update_cache: true
         mode: '0644'
 
+    # - name: Stop any existing Docker service
+    #   systemd:
+    #     name: docker
+    #     state: stopped
+    #   ignore_errors: true
+
+    # - name: Remove any existing Docker packages
+    #   apt:
+    #     name:
+    #       - docker.io
+    #       - docker-doc
+    #       - docker-compose
+    #       - docker-compose-v2
+    #       - podman-docker
+    #       - containerd
+    #       - runc
+    #     state: absent
+    #     purge: true
+    #   ignore_errors: true
+
+    # - name: Clean up any existing Docker directories
+    #   file:
+    #     path: '{{ item }}'
+    #     state: absent
+    #   loop:
+    #     - /etc/docker
+    #     - /var/lib/docker
+    #     - /var/lib/containerd
+    #   ignore_errors: true
+
     - name: Install Docker Engine, CLI, and Compose plugin
       apt:
         name:
@@ -51,6 +81,12 @@
           - docker-buildx-plugin
           - docker-compose-plugin
         state: present
+
+    - name: Ensure containerd is running before Docker
+      systemd:
+        name: containerd
+        state: started
+        enabled: true
 
     - name: Ensure Docker is running and enabled on boot
       systemd:
