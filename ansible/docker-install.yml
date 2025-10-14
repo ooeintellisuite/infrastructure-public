@@ -1,0 +1,138 @@
+---
+- name: Install Docker Engine and essentials on Ubuntu
+  hosts: all
+  become: true
+
+  vars:
+    docker_user: "{{ ansible_user | default('ubuntu') }}"
+
+  tasks:
+    - name: Ensure required base packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+        state: present
+        update_cache: true
+
+    - name: Add Docker's official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Set up the Docker repository
+      apt_repository:
+        repo: "deb [arch={{ ansible_architecture }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        update_cache: true
+
+    - name: Install Docker Engine, CLI, and Compose plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Ensure Docker is running and enabled on boot
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add user to docker group for rootless usage
+      user:
+        name: "{{ docker_user }}"
+        groups: docker
+        append: true
+
+    - name: Verify Docker is installed and running
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Show Docker version
+      debug:
+        var: docker_version.stdout
+
+    - name: Test Docker with hello-world
+      command: docker run --rm hello-world
+      register: docker_test
+      changed_when: false
+      failed_when: "'Hello from Docker!' not in docker_test.stdout"
+
+    - name: Configure Docker daemon for better user experience
+      blockinfile:
+        path: /etc/docker/daemon.json
+        create: yes
+        mode: "0644"
+        backup: no
+        block: |
+          {
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "5"
+            },
+            "storage-driver": "overlay2"
+          }
+
+    - name: Restart Docker to apply daemon configuration
+      systemd:
+        name: docker
+        state: restarted
+
+    - name: Create Docker config directory for the user
+      file:
+        path: "/home/{{ docker_user }}/.docker"
+        state: directory
+        owner: "{{ docker_user }}"
+        group: "{{ docker_user }}"
+        mode: "0700"
+
+    - name: Add user environment variables for Docker
+      blockinfile:
+        path: "/home/{{ docker_user }}/.bashrc"
+        create: no
+        backup: no
+        block: |
+          # Docker environment variables
+          export DOCKER_BUILDKIT=1
+          export COMPOSE_DOCKER_CLI_BUILD=1
+
+    - name: Set correct ownership of .bashrc
+      file:
+        path: "/home/{{ docker_user }}/.bashrc"
+        owner: "{{ docker_user }}"
+        group: "{{ docker_user }}"
+
+    - name: Add helpful Docker aliases
+      blockinfile:
+        path: "/home/{{ docker_user }}/.bashrc"
+        create: no
+        backup: no
+        block: |
+          # Docker aliases
+          alias dps='docker ps'
+          alias dpsa='docker ps -a'
+          alias di='docker images'
+          alias drm='docker rm'
+          alias drmi='docker rmi'
+          alias dstop='docker stop'
+          alias dstart='docker start'
+          alias dc='docker compose'
+          alias dcup='docker compose up -d'
+          alias dcdown='docker compose down'
+          alias dlogs='docker logs'
+          alias dexec='docker exec -it'
+
+    - name: Set correct ownership of .bashrc after aliases
+      file:
+        path: "/home/{{ docker_user }}/.bashrc"
+        owner: "{{ docker_user }}"
+        group: "{{ docker_user }}"
