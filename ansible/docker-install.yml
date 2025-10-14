@@ -18,13 +18,13 @@
         state: present
         update_cache: true
 
-    # - name: Remove any existing Docker repository configuration
-    #   file:
-    #     path: '{{ item }}'
-    #     state: absent
-    #   loop:
-    #     - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
-    #     - /etc/apt/sources.list.d/docker.list
+    - name: Remove any existing Docker repository configuration
+      file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
+        - /etc/apt/sources.list.d/docker.list
 
     - name: Add Docker's official GPG key to proper location
       apt_key:
@@ -42,35 +42,35 @@
         update_cache: true
         mode: '0644'
 
-    # - name: Stop any existing Docker service
-    #   systemd:
-    #     name: docker
-    #     state: stopped
-    #   ignore_errors: true
+    - name: Stop any existing Docker service
+      systemd:
+        name: docker
+        state: stopped
+      ignore_errors: true
 
-    # - name: Remove any existing Docker packages
-    #   apt:
-    #     name:
-    #       - docker.io
-    #       - docker-doc
-    #       - docker-compose
-    #       - docker-compose-v2
-    #       - podman-docker
-    #       - containerd
-    #       - runc
-    #     state: absent
-    #     purge: true
-    #   ignore_errors: true
+    - name: Remove any existing Docker packages
+      apt:
+        name:
+          - docker.io
+          - docker-doc
+          - docker-compose
+          - docker-compose-v2
+          - podman-docker
+          - containerd
+          - runc
+        state: absent
+        purge: true
+      ignore_errors: true
 
-    # - name: Clean up any existing Docker directories
-    #   file:
-    #     path: '{{ item }}'
-    #     state: absent
-    #   loop:
-    #     - /etc/docker
-    #     - /var/lib/docker
-    #     - /var/lib/containerd
-    #   ignore_errors: true
+    - name: Clean up any existing Docker directories
+      file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/docker
+        - /var/lib/docker
+        - /var/lib/containerd
+      ignore_errors: true
 
     - name: Install Docker Engine, CLI, and Compose plugin
       apt:
