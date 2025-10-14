@@ -80,12 +80,8 @@
       failed_when: "'Hello from Docker!' not in docker_test.stdout"
 
     - name: Configure Docker daemon for better user experience
-      blockinfile:
-        path: /etc/docker/daemon.json
-        create: yes
-        mode: '0644'
-        backup: no
-        block: |
+      copy:
+        content: |
           {
             "log-driver": "json-file",
             "log-opts": {
@@ -94,6 +90,9 @@
             },
             "storage-driver": "overlay2"
           }
+        dest: /etc/docker/daemon.json
+        mode: '0644'
+        backup: no
 
     - name: Restart Docker to apply daemon configuration
       systemd:
