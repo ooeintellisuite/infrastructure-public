@@ -1,78 +1,47 @@
 ---
 - name: Install Docker Engine and essentials on Ubuntu
   hosts: all
-  become: true
+  become: yes
 
   vars:
-    docker_user: "{{ ansible_user | default('ubuntu') }}"
+    docker_user: '{{ ansible_user }}'
+    docker_config_dir: '/home/{{ docker_user }}/.docker'
 
   tasks:
-    - name: Ensure required base packages
+    - name: Install required packages
       apt:
         name:
           - ca-certificates
           - curl
           - gnupg
           - lsb-release
-          - software-properties-common
         state: present
-        update_cache: true
+        update_cache: yes
 
-    - name: Remove any existing Docker repository configuration
+    - name: Create keyrings directory
       file:
-        path: '{{ item }}'
-        state: absent
-      loop:
-        - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
-        - /etc/apt/sources.list.d/docker.list
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
-    - name: Add Docker's official GPG key to proper location
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+    - name: Add Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
 
-    - name: Debug architecture and distribution
-      debug:
-        msg: 'Architecture: {{ ansible_architecture }}, Distribution: {{ ansible_distribution_release }}'
+    - name: Add Docker repository
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
 
-    - name: Set up the Docker repository with correct architecture
-      apt_repository:
-        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-        state: present
-        update_cache: true
-        mode: '0644'
-
-    - name: Stop any existing Docker service
-      systemd:
-        name: docker
-        state: stopped
-      ignore_errors: true
-
-    - name: Remove any existing Docker packages
+    - name: Update apt cache
       apt:
-        name:
-          - docker.io
-          - docker-doc
-          - docker-compose
-          - docker-compose-v2
-          - podman-docker
-          - containerd
-          - runc
-        state: absent
-        purge: true
-      ignore_errors: true
+        update_cache: yes
 
-    - name: Clean up any existing Docker directories
-      file:
-        path: '{{ item }}'
-        state: absent
-      loop:
-        - /etc/docker
-        - /var/lib/docker
-        - /var/lib/containerd
-      ignore_errors: true
-
-    - name: Install Docker Engine, CLI, and Compose plugin
+    - name: Install Docker packages
       apt:
         name:
           - docker-ce
@@ -82,105 +51,107 @@
           - docker-compose-plugin
         state: present
 
-    - name: Ensure containerd is running before Docker
-      systemd:
-        name: containerd
-        state: started
-        enabled: true
+    - name: Create Docker daemon configuration directory
+      file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
 
-    - name: Ensure Docker is running and enabled on boot
-      systemd:
-        name: docker
-        state: started
-        enabled: true
-
-    - name: Add user to docker group for rootless usage
-      user:
-        name: '{{ docker_user }}'
-        groups: docker
-        append: true
-
-    - name: Verify Docker is installed and running
-      command: docker --version
-      register: docker_version
-      changed_when: false
-
-    - name: Show Docker version
-      debug:
-        var: docker_version.stdout
-
-    - name: Test Docker with hello-world
-      command: docker run --rm hello-world
-      register: docker_test
-      changed_when: false
-      failed_when: "'Hello from Docker!' not in docker_test.stdout"
-
-    - name: Configure Docker daemon for better user experience
+    - name: Configure Docker daemon with logging and performance settings
       copy:
         content: |
           {
             "log-driver": "json-file",
             "log-opts": {
               "max-size": "10m",
-              "max-file": "5"
+              "max-file": "3"
             },
-            "storage-driver": "overlay2"
+            "storage-driver": "overlay2",
+            "features": {
+              "buildkit": true
+            },
+            "metrics-addr": "127.0.0.1:9323",
+            "experimental": false,
+            "default-address-pools": [
+              {
+                "base": "172.17.0.0/16",
+                "size": 24
+              }
+            ]
           }
         dest: /etc/docker/daemon.json
         mode: '0644'
-        backup: no
+      notify: restart docker
 
-    - name: Restart Docker to apply daemon configuration
-      systemd:
-        name: docker
-        state: restarted
+    - name: Add user to docker group
+      user:
+        name: '{{ docker_user }}'
+        groups: docker
+        append: yes
 
-    - name: Create Docker config directory for the user
+    - name: Create user Docker config directory
       file:
-        path: '/home/{{ docker_user }}/.docker'
+        path: '{{ docker_config_dir }}'
         state: directory
         owner: '{{ docker_user }}'
         group: '{{ docker_user }}'
         mode: '0700'
 
-    - name: Add user environment variables for Docker
+    - name: Create user Docker CLI config
+      copy:
+        content: |
+          {
+            "experimental": "enabled"
+          }
+        dest: '{{ docker_config_dir }}/config.json'
+        owner: '{{ docker_user }}'
+        group: '{{ docker_user }}'
+        mode: '0644'
+
+    - name: Set Docker environment variables in profile
       blockinfile:
         path: '/home/{{ docker_user }}/.bashrc'
-        create: no
-        backup: no
         block: |
-          # Docker environment variables
+          # Docker environment variables for server use
           export DOCKER_BUILDKIT=1
           export COMPOSE_DOCKER_CLI_BUILD=1
-
-    - name: Set correct ownership of .bashrc
-      file:
-        path: '/home/{{ docker_user }}/.bashrc'
+          export BUILDKIT_PROGRESS=plain
+        marker: '# {mark} ANSIBLE MANAGED DOCKER CONFIG'
+        create: yes
         owner: '{{ docker_user }}'
         group: '{{ docker_user }}'
+        mode: '0644'
 
-    - name: Add helpful Docker aliases
-      blockinfile:
-        path: '/home/{{ docker_user }}/.bashrc'
-        create: no
-        backup: no
-        block: |
-          # Docker aliases
-          alias dps='docker ps'
-          alias dpsa='docker ps -a'
-          alias di='docker images'
-          alias drm='docker rm'
-          alias drmi='docker rmi'
-          alias dstop='docker stop'
-          alias dstart='docker start'
-          alias dc='docker compose'
-          alias dcup='docker compose up -d'
-          alias dcdown='docker compose down'
-          alias dlogs='docker logs'
-          alias dexec='docker exec -it'
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
 
-    - name: Set correct ownership of .bashrc after aliases
-      file:
-        path: '/home/{{ docker_user }}/.bashrc'
-        owner: '{{ docker_user }}'
-        group: '{{ docker_user }}'
+    - name: Wait for Docker to be ready
+      command: docker info
+      register: docker_info
+      retries: 5
+      delay: 3
+      until: docker_info.rc == 0
+      changed_when: false
+
+    - name: Verify Docker Compose
+      command: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: Create weekly Docker cleanup cron job
+      cron:
+        name: 'Docker system prune'
+        minute: '0'
+        hour: '2'
+        weekday: '0'
+        job: "/usr/bin/docker system prune -af --volumes --filter 'until=168h' >> /var/log/docker-prune.log 2>&1"
+        user: root
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted
