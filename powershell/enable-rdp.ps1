@@ -1,4 +1,6 @@
 # https://tinyurl.com/oee-rdp
+# One-click RDP setup: Run as Administrator and execute:
+# PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ooeintellisuite/infrastructure-public/main/powershell/enable-rdp.ps1' -OutFile '$env:TEMP\enable-rdp.ps1'; & '$env:TEMP\enable-rdp.ps1'"
 
 # --- Pre-check for Administrator privileges ---
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -6,7 +8,6 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-PowerShell.exe -ExecutionPolicy Bypass -File "C:\Users\Administrator\Downloads\enable-rdp.ps1"
 
 # Enable Remote Desktop (sets fDenyTSConnections = 0)
 Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
