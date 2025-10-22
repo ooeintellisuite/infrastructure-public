@@ -1,8 +1,12 @@
+# https://tinyurl.com/oee-rdp
+
 # --- Pre-check for Administrator privileges ---
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Error "This script must be run with Administrator privileges. Please right-click and 'Run as Administrator'."
     exit 1
 }
+
+PowerShell.exe -ExecutionPolicy Bypass -File "C:\Users\Administrator\Downloads\enable-rdp.ps1"
 
 # Enable Remote Desktop (sets fDenyTSConnections = 0)
 Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
