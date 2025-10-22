@@ -22,7 +22,7 @@ PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https:/
 ## TinyURL Shortcut
 
 For easier sharing, use this TinyURL:
-[https://tinyurl.com/oee-rdp](https://tinyurl.com/oee-rdp)
+[https://tinyurl.com/oee-kvm](https://tinyurl.com/oee-kvm)
 
 This link will redirect to this page with the instructions above.
 
