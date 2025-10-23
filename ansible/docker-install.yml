@@ -1,7 +1,8 @@
 ---
 - name: Install Docker Engine and essentials on Ubuntu
-  hosts: all
+  hosts: localhost
   become: yes
+  connection: local
 
   vars:
     docker_user: '{{ ansible_user }}'

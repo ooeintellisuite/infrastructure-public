@@ -6,7 +6,7 @@
 2. Copy and paste this command:
 
 ```bash
-sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main ansible/docker-install.yml --connection=local
+sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main ansible/docker-install.yml
 ```
 
 3. Press Enter and wait for the installation to complete
