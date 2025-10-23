@@ -5,7 +5,7 @@
   connection: local
 
   vars:
-    docker_user: '{{ ansible_user }}'
+    docker_user: '{{ lookup("env", "USER") }}'
     docker_config_dir: '/home/{{ docker_user }}/.docker'
 
   tasks:
