@@ -116,7 +116,8 @@
         group: "{{ ps_user }}"
         mode: "0755"
 
-    - name: Set PowerShell execution policy for user
+    - name: Set PowerShell execution policy for user (Windows only)
       command: pwsh -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
       become_user: "{{ ps_user }}"
       changed_when: false
+      when: ansible_os_family == "Windows"
