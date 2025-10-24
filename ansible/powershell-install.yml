@@ -1,0 +1,122 @@
+---
+- name: Install PowerShell Core on Ubuntu 24.04
+  hosts: localhost
+  become: yes
+  connection: local
+
+  vars:
+    ps_user: '{{ lookup("env", "USER") }}'
+    ps_config_dir: "/home/{{ ps_user }}/.config/powershell"
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - wget
+        state: present
+        update_cache: yes
+
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Add Microsoft GPG key
+      shell: |
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+        chmod a+r /etc/apt/keyrings/microsoft.gpg
+      args:
+        creates: /etc/apt/keyrings/microsoft.gpg
+
+    - name: Add Microsoft repository for Ubuntu 24.04
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-noble-prod noble main" | tee /etc/apt/sources.list.d/microsoft.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/microsoft.list
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install PowerShell Core
+      apt:
+        name: powershell
+        state: present
+
+    - name: Create PowerShell configuration directory
+      file:
+        path: "{{ ps_config_dir }}"
+        state: directory
+        owner: "{{ ps_user }}"
+        group: "{{ ps_user }}"
+        mode: "0755"
+
+    # - name: Create PowerShell profile with useful defaults
+    #   copy:
+    #     content: |
+    #       # PowerShell profile with useful defaults
+    #       $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+    #       $PSDefaultParameterValues['Export-Csv:NoTypeInformation'] = $true
+
+    #       # Set up useful aliases
+    #       Set-Alias -Name l -Value Get-ChildItem
+    #       Set-Alias -Name ll -Value Get-ChildItem
+
+    #       # Enable verbose output for common commands
+    #       $VerbosePreference = 'SilentlyContinue'
+    #     dest: '{{ ps_config_dir }}/Microsoft.PowerShell_profile.ps1'
+    #     owner: '{{ ps_user }}'
+    #     group: '{{ ps_user }}'
+    #     mode: '0644'
+
+    - name: Add PowerShell to PATH in bashrc
+      blockinfile:
+        path: "/home/{{ ps_user }}/.bashrc"
+        block: |
+          # PowerShell Core
+          export PATH="$PATH:/opt/microsoft/powershell/7"
+
+          # PowerShell aliases for convenience
+          alias pwsh='powershell'
+          alias ps='powershell'
+        marker: "# {mark} ANSIBLE MANAGED POWERSHELL CONFIG"
+        create: yes
+        owner: "{{ ps_user }}"
+        group: "{{ ps_user }}"
+        mode: "0644"
+
+    - name: Verify PowerShell installation
+      command: pwsh --version
+      register: powershell_version
+      changed_when: false
+
+    - name: Display PowerShell version
+      debug:
+        msg: "PowerShell installed: {{ powershell_version.stdout }}"
+
+    - name: Test PowerShell execution
+      command: pwsh -Command "Get-Host | Select-Object Name, Version"
+      register: powershell_test
+      changed_when: false
+
+    - name: Display PowerShell test result
+      debug:
+        var: powershell_test.stdout_lines
+
+    - name: Create PowerShell modules directory
+      file:
+        path: "/home/{{ ps_user }}/.local/share/powershell/Modules"
+        state: directory
+        owner: "{{ ps_user }}"
+        group: "{{ ps_user }}"
+        mode: "0755"
+
+    - name: Set PowerShell execution policy for user
+      command: pwsh -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
+      become_user: "{{ ps_user }}"
+      changed_when: false
