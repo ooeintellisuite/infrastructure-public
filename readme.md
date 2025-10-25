@@ -19,3 +19,7 @@ PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https:/
 ```powershell
 PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ooeintellisuite/infrastructure-public/main/powershell/dev-tools-full.ps1' -OutFile '$env:TEMP\dev-tools-full.ps1'; & '$env:TEMP\dev-tools-full.ps1'"
 ```
+
+```powershell
+PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ooeintellisuite/infrastructure-public/main/powershell/install-wsl-ubuntu.ps1' -OutFile '$env:TEMP\install-wsl-ubuntu.ps1'; & '$env:TEMP\install-wsl-ubuntu.ps1'"
+```

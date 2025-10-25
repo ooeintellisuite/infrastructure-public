@@ -13,27 +13,25 @@ Write-Host "Enabling Virtual Machine Platform feature..." -ForegroundColor Green
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
 # Download and install WSL2 Linux kernel update package
-Write-Host "Downloading WSL2 Linux kernel update package..." -ForegroundColor Green
-$kernelUpdateUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
-$kernelUpdatePath = "$env:TEMP\wsl_update_x64.msi"
-Invoke-WebRequest -Uri $kernelUpdateUrl -OutFile $kernelUpdatePath
+# Write-Host "Downloading WSL2 Linux kernel update package..." -ForegroundColor Green
+# $kernelUpdateUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
+# $kernelUpdatePath = "$env:TEMP\wsl_update_x64.msi"
+# Invoke-WebRequest -Uri $kernelUpdateUrl -OutFile $kernelUpdatePath
 
-Write-Host "Installing WSL2 Linux kernel update package..." -ForegroundColor Green
-Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$kernelUpdatePath`" /quiet" -Wait
+# Write-Host "Installing WSL2 Linux kernel update package..." -ForegroundColor Green
+# Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$kernelUpdatePath`" /quiet" -Wait
+
+# Install WSL and Ubuntu
+wsl --install -d Ubuntu
 
 # Set WSL2 as the default version
 Write-Host "Setting WSL2 as the default version..." -ForegroundColor Green
 wsl --set-default-version 2
 
-# Install Ubuntu from Microsoft Store (this will open the Microsoft Store)
-Write-Host "Installing Ubuntu from Microsoft Store..." -ForegroundColor Green
-Write-Host "Note: This will open the Microsoft Store. Please click 'Get' or 'Install' on the Ubuntu page." -ForegroundColor Yellow
-Start-Process "ms-windows-store://pdp/?productid=9NBLGGH4MSV6"
-
 # Reboot prompt
 Write-Host "WSL and Ubuntu installation setup completed." -ForegroundColor Green
 Write-Host "A system reboot is required to complete the installation." -ForegroundColor Yellow
-Write-Host "After rebooting, you can initialize Ubuntu by running 'ubuntu' from PowerShell or Command Prompt." -ForegroundColor Yellow
+Write-Host "After rebooting, you can initialize Ubuntu by running 'wsl' from PowerShell or Command Prompt." -ForegroundColor Yellow
 
 $reboot = Read-Host "Do you want to reboot now? (Y/N)"
 if ($reboot -eq 'Y' -or $reboot -eq 'y') {
