@@ -33,14 +33,6 @@ choco install git -y
 Write-Host "Installing Node.js..." -ForegroundColor Green
 choco install nodejs -y
 
-# Install pnpm
-Write-Host "Installing pnpm..." -ForegroundColor Green
-npm install -g pnpm
-
-# Install Prisma CLI
-Write-Host "Installing Prisma CLI..." -ForegroundColor Green
-npm install -g prisma
-
 # Install Python
 Write-Host "Installing Python..." -ForegroundColor Green
 choco install python -y
