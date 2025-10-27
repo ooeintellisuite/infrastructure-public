@@ -187,6 +187,31 @@
         group: '{{ dev_user }}'
         mode: '0644'
 
+    - name: Debug - Check downloaded file type
+      shell: file '{{ tools_dir }}/azure-data-studio-linux.deb'
+      register: azure_file_type
+
+    - name: Debug - Display file type information
+      debug:
+        var: azure_file_type.stdout_lines
+
+    - name: Debug - Check file size
+      shell: ls -la '{{ tools_dir }}/azure-data-studio-linux.deb'
+      register: azure_file_size
+
+    - name: Debug - Display file size information
+      debug:
+        var: azure_file_size.stdout_lines
+
+    - name: Debug - Verify package integrity
+      shell: dpkg-deb --info '{{ tools_dir }}/azure-data-studio-linux.deb' || echo "Package verification failed"
+      register: azure_package_info
+      failed_when: false
+
+    - name: Debug - Display package information
+      debug:
+        var: azure_package_info.stdout_lines
+
     - name: Install Azure Data Studio
       apt:
         deb: '{{ tools_dir }}/azure-data-studio-linux.deb'
