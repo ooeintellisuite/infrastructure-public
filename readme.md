@@ -23,3 +23,7 @@ PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https:/
 ```powershell
 PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ooeintellisuite/infrastructure-public/main/powershell/install-wsl-ubuntu.ps1' -OutFile '$env:TEMP\install-wsl-ubuntu.ps1'; & '$env:TEMP\install-wsl-ubuntu.ps1'"
 ```
+
+```powershell
+PowerShell.exe -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ooeintellisuite/infrastructure-public/main/powershell/add-rdp-user.ps1' -OutFile '$env:TEMP\add-rdp-user.ps1'; & '$env:TEMP\add-rdp-user.ps1' -Username 'yourusername' -Password ''"
+```
