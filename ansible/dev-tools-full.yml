@@ -56,6 +56,7 @@
         state: present
 
     # Python Installation
+    # Note: Ubuntu 25.10 comes with Python 3.13 and pip is managed by the system (PEP 668)
     - name: Install Python 3 and related packages
       apt:
         name:
@@ -64,13 +65,9 @@
           - python3-venv
           - python3-dev
           - python-is-python3
+          - python3-full
+          - pipx
         state: present
-
-    - name: Upgrade pip to latest version
-      pip:
-        name: pip
-        state: latest
-        executable: pip3
 
     # DBeaver Installation
     - name: Create tools directory
