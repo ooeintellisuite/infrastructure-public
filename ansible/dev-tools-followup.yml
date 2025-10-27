@@ -1,0 +1,144 @@
+---
+- name: Install Development Follow-up Tools (Cross-Platform)
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    # Platform-specific variables
+    is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+    is_windows: "{{ ansible_os_family == 'Windows' }}"
+    dev_user: "{{ ansible_user_id if is_ubuntu else ansible_user }}"
+    tools_dir: "{{ ansible_user_dir if is_windows else '/home/' + dev_user }}/dev-tools"
+
+  tasks:
+    - name: Display follow-up installation start message
+      debug:
+        msg: "Starting installation of follow-up development tools for {{ ansible_distribution }} {{ ansible_distribution_version }}..."
+
+    # Ubuntu-specific tasks
+    - block:
+        # Install pnpm
+        - name: Install pnpm (Ubuntu)
+          npm:
+            name: pnpm
+            global: yes
+          become: yes
+
+        # Install Prisma CLI
+        - name: Install Prisma CLI (Ubuntu)
+          npm:
+            name: prisma
+            global: yes
+          become: yes
+
+        # Install VS Code extensions
+        - name: Install VS Code extensions (Ubuntu)
+          shell: |
+            code --install-extension streetsidesoftware.code-spell-checker --force
+            code --install-extension esbenp.prettier-vscode --force
+            code --install-extension CucumberOpen.cucumber-official --force
+            code --install-extension vivaxy.vscode-conventional-commits --force
+            code --install-extension redhat.vscode-yaml --force
+            code --install-extension redhat.vscode-xml --force
+            code --install-extension ms-python.python --force
+            code --install-extension ms-python.black-formatter --force
+            code --install-extension ms-python.debugpy --force
+            code --install-extension ms-python.vscode-pylance --force
+            code --install-extension vitest.explorer --force
+            code --install-extension dbaeumer.vscode-eslint --force
+            code --install-extension dsznajder.es7-react-js-snippets --force
+            code --install-extension Prisma.prisma --force
+          register: vscode_extensions_ubuntu
+          changed_when: "'already installed' not in vscode_extensions_ubuntu.stderr"
+
+      when: is_ubuntu
+
+    # Windows-specific tasks
+    - block:
+        # Check for Administrator privileges
+        - name: Check for Administrator privileges (Windows)
+          win_shell: |
+            $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+            if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+              Write-Error "This script must be run with Administrator privileges."
+              exit 1
+            }
+          when: is_windows
+
+        # Install pnpm
+        - name: Install pnpm (Windows)
+          win_shell: npm install -g pnpm
+          when: is_windows
+
+        # Install Prisma CLI
+        - name: Install Prisma CLI (Windows)
+          win_shell: npm install -g prisma
+          when: is_windows
+
+        # Install VS Code extensions
+        - name: Install VS Code extensions (Windows)
+          win_shell: |
+            $extensions = @(
+                "streetsidesoftware.code-spell-checker",
+                "esbenp.prettier-vscode",
+                "CucumberOpen.cucumber-official",
+                "vivaxy.vscode-conventional-commits",
+                "redhat.vscode-yaml",
+                "redhat.vscode-xml",
+                "ms-python.python",
+                "ms-python.black-formatter",
+                "ms-python.debugpy",
+                "ms-python.vscode-pylance",
+                "vitest.explorer",
+                "dbaeumer.vscode-eslint",
+                "dsznajder.es7-react-js-snippets",
+                "Prisma.prisma"
+            )
+
+            $systemExtensionsDir = "$env:ProgramFiles\Microsoft VS Code\resources\app\extensions"
+
+            foreach ($extension in $extensions) {
+                code --extensions-dir $systemExtensionsDir --install-extension $extension --force
+            }
+          when: is_windows
+
+      when: is_windows
+
+    # Common tasks for both platforms
+    - name: Display follow-up installation completion message
+      debug:
+        msg: "Follow-up development tools installation completed for {{ ansible_distribution }} {{ ansible_distribution_version }}."
+
+    - name: Create follow-up installation summary
+      copy:
+        content: |
+          Development Follow-up Tools Installation Summary
+          ================================================
+          Platform: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Installed on: {{ ansible_date_time.iso8601 }}
+
+          Installed Tools:
+          - pnpm (Package manager)
+          - Prisma CLI (Database toolkit)
+
+          Installed VS Code Extensions:
+          - streetsidesoftware.code-spell-checker (Spell checker)
+          - esbenp.prettier-vscode (Code formatter)
+          - CucumberOpen.cucumber-official (Cucumber support)
+          - vivaxy.vscode-conventional-commits (Conventional commits)
+          - redhat.vscode-yaml (YAML support)
+          - redhat.vscode-xml (XML support)
+          - ms-python.python (Python support)
+          - ms-python.black-formatter (Python formatter)
+          - ms-python.debugpy (Python debugger)
+          - ms-python.vscode-pylance (Python language server)
+          - vitest.explorer (Vitest testing)
+          - dbaeumer.vscode-eslint (JavaScript linter)
+          - dsznajder.es7-react-js-snippets (React snippets)
+          - Prisma.prisma (Prisma support)
+
+          Note: Some VS Code extensions may require VS Code restart to work properly.
+        dest: "{{ tools_dir }}/dev-tools-followup-summary.txt"
+        mode: "0644"

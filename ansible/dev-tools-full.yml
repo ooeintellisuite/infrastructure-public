@@ -1,0 +1,255 @@
+---
+- name: Install Development Tools on Ubuntu
+  hosts: localhost
+  become: yes
+  connection: local
+
+  vars:
+    dev_user: '{{ lookup("env", "USER") }}'
+    tools_dir: '/home/{{ dev_user }}/dev-tools'
+
+  tasks:
+    - name: Display installation start message
+      debug:
+        msg: 'Starting installation of development tools for Ubuntu 25...'
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install common prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+          - wget
+          - unzip
+          - build-essential
+        state: present
+
+    # Git Installation
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Configure Git user name (if not set)
+      shell: git config --global user.name || echo "Git user name not configured"
+      register: git_username
+      changed_when: false
+
+    - name: Configure Git user email (if not set)
+      shell: git config --global user.email || echo "Git user email not configured"
+      register: git_useremail
+      changed_when: false
+
+    # Node.js Installation
+    - name: Add Node.js GPG key
+      shell: |
+        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+        chmod a+r /etc/apt/keyrings/nodesource.gpg
+      args:
+        creates: /etc/apt/keyrings/nodesource.gpg
+
+    - name: Add Node.js repository
+      shell: |
+        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/nodesource.list
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Update apt cache after adding Node.js repo
+      apt:
+        update_cache: yes
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    # Python Installation
+    - name: Install Python 3 and related packages
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+          - python3-dev
+          - python-is-python3
+        state: present
+
+    - name: Upgrade pip to latest version
+      pip:
+        name: pip
+        state: latest
+        executable: pip3
+
+    # DBeaver Installation
+    - name: Create tools directory
+      file:
+        path: '{{ tools_dir }}'
+        state: directory
+        owner: '{{ dev_user }}'
+        group: '{{ dev_user }}'
+        mode: '0755'
+
+    - name: Download DBeaver
+      get_url:
+        url: https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb
+        dest: '{{ tools_dir }}/dbeaver-ce_latest_amd64.deb'
+        owner: '{{ dev_user }}'
+        group: '{{ dev_user }}'
+        mode: '0644'
+
+    - name: Install DBeaver
+      apt:
+        deb: '{{ tools_dir }}/dbeaver-ce_latest_amd64.deb'
+        state: present
+
+    # Google Chrome Installation
+    - name: Add Google Chrome GPG key
+      shell: |
+        curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg
+        chmod a+r /etc/apt/keyrings/google-chrome.gpg
+      args:
+        creates: /etc/apt/keyrings/google-chrome.gpg
+
+    - name: Add Google Chrome repository
+      shell: |
+        echo "deb [signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
+      args:
+        creates: /etc/apt/sources.list.d/google-chrome.list
+
+    - name: Update apt cache after adding Chrome repo
+      apt:
+        update_cache: yes
+
+    - name: Install Google Chrome
+      apt:
+        name: google-chrome-stable
+        state: present
+
+    # Postman Installation
+    - name: Download Postman
+      get_url:
+        url: https://dl.pstmn.io/download/latest/linux64
+        dest: '{{ tools_dir }}/postman-linux-x64.tar.gz'
+        owner: '{{ dev_user }}'
+        group: '{{ dev_user }}'
+        mode: '0644'
+
+    - name: Create Postman directory
+      file:
+        path: /opt/Postman
+        state: directory
+        mode: '0755'
+
+    - name: Extract Postman
+      unarchive:
+        src: '{{ tools_dir }}/postman-linux-x64.tar.gz'
+        dest: /opt/Postman
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Create Postman symlink
+      file:
+        src: /opt/Postman/Postman
+        dest: /usr/local/bin/postman
+        state: link
+
+    - name: Create Postman desktop entry
+      copy:
+        content: |
+          [Desktop Entry]
+          Name=Postman
+          Exec=/opt/Postman/Postman
+          Icon=/opt/Postman/resources/app/assets/icon.png
+          Terminal=false
+          Type=Application
+          Categories=Development;
+        dest: /usr/share/applications/postman.desktop
+        mode: '0644'
+
+    # Visual Studio Code Installation
+    - name: Add Microsoft GPG key
+      shell: |
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+        chmod a+r /etc/apt/keyrings/microsoft.gpg
+      args:
+        creates: /etc/apt/keyrings/microsoft.gpg
+
+    - name: Add VS Code repository
+      shell: |
+        echo "deb [signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list
+      args:
+        creates: /etc/apt/sources.list.d/vscode.list
+
+    - name: Update apt cache after adding VS Code repo
+      apt:
+        update_cache: yes
+
+    - name: Install Visual Studio Code
+      apt:
+        name: code
+        state: present
+
+    # Azure Data Studio Installation
+    - name: Download Azure Data Studio
+      get_url:
+        url: https://go.microsoft.com/fwlink/?linkid=2145499
+        dest: '{{ tools_dir }}/azure-data-studio-linux.deb'
+        owner: '{{ dev_user }}'
+        group: '{{ dev_user }}'
+        mode: '0644'
+
+    - name: Install Azure Data Studio
+      apt:
+        deb: '{{ tools_dir }}/azure-data-studio-linux.deb'
+        state: present
+
+    # Windows-specific tools notification
+    - name: Display Windows-specific tools message
+      debug:
+        msg: |
+          Note: The following tools from the original PowerShell script are Windows-specific and not available on Ubuntu:
+          - SQL Server Management Studio (SSMS)
+
+          Alternatives that have been installed:
+          - Azure Data Studio (cross-platform SQL management)
+          - DBeaver (universal database tool)
+
+    - name: Display installation completion message
+      debug:
+        msg: 'All development tools installation completed for Ubuntu 25.'
+
+    - name: Create summary of installed tools
+      copy:
+        content: |
+          Development Tools Installation Summary
+          ======================================
+          Installed on: {{ ansible_date_time.iso8601 }}
+
+          Installed Tools:
+          - Git
+          - Node.js
+          - Python 3
+          - DBeaver (Database Tool)
+          - Google Chrome
+          - Postman
+          - Visual Studio Code
+          - Azure Data Studio (SQL Management)
+
+          Note: Docker installation is handled separately via docker-install.yml
+
+          Windows-specific tools not installed:
+          - SQL Server Management Studio (SSMS) - Replaced with Azure Data Studio
+
+          Note: Some tools may require a system restart or logout/login to work properly.
+        dest: '/home/{{ dev_user }}/dev-tools-installation-summary.txt'
+        owner: '{{ dev_user }}'
+        group: '{{ dev_user }}'
+        mode: '0644'
