@@ -61,9 +61,6 @@ if (Get-LocalGroup -Name "docker-users" -ErrorAction SilentlyContinue) {
 # --- Final Configuration ---
 Write-Host "Finalizing user configuration..." -ForegroundColor Green
 
-# Set user account to never expire
-Set-LocalUser -Name $Username -PasswordNeverExpires $true
-
 # Enable user account if disabled
 Enable-LocalUser -Name $Username
 
