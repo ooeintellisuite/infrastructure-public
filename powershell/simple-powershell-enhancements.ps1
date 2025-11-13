@@ -72,5 +72,5 @@ Install-Module -Name PackageManagement -Force -AllowClobber -Scope AllUsers -Rep
 Write-Host "Checking execution policy..." -ForegroundColor Yellow
 
 Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop
-        Write-Host "✓ Execution policy set to RemoteSigned" -ForegroundColor Green
+        Write-Host "Execution policy set to RemoteSigned" -ForegroundColor Green
 
