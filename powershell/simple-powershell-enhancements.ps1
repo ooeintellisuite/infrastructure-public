@@ -74,12 +74,3 @@ Write-Host "Checking execution policy..." -ForegroundColor Yellow
 Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop
         Write-Host "✓ Execution policy set to RemoteSigned" -ForegroundColor Green
 
-Write-Host "`n=== SETUP COMPLETE ===" -ForegroundColor Green
-Write-Host "Modern PowerShell defaults have been configured:" -ForegroundColor White
-Write-Host "✓ TLS 1.2 set as default globally" -ForegroundColor Green
-Write-Host "✓ PowerShell Gallery trusted" -ForegroundColor Green
-Write-Host "✓ Latest package providers installed" -ForegroundColor Green
-Write-Host "✓ Common modules installed" -ForegroundColor Green
-Write-Host "✓ Global PowerShell profile created" -ForegroundColor Green
-Write-Host "✓ Modern execution policy set" -ForegroundColor Green
-Write-Host "`nRestart PowerShell to use the new profile, or run: . `$PROFILE.AllUsersAllHosts" -ForegroundColor Yellow
