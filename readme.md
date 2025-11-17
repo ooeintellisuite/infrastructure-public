@@ -20,6 +20,12 @@ ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git   -
 sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main ansible/docker-install.yml
 ```
 
+## Powershell Installation with Ansible Setup
+
+```bash
+sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git   -C main   -i ansible/inventory     ansible/powershell-install.yml
+```
+
 # Windows PowerShell Scripts
 
 ## Enable Remote Desktop Protocol (RDP)

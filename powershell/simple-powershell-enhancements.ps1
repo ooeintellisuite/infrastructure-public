@@ -61,16 +61,6 @@ Write-Host "Installing latest package management components..." -ForegroundColor
 Write-Host "Installing NuGet package provider..." -ForegroundColor Yellow
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ErrorAction SilentlyContinue
 
-
-    Write-Host "Registering PowerShell Gallery repository..." -ForegroundColor Yellow
-    Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v2" -InstallationPolicy Trusted
-
 Write-Host "Installing/Updating PowerShellGet and PackageManagement modules..." -ForegroundColor Yellow
 Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -Repository PSGallery
 Install-Module -Name PackageManagement -Force -AllowClobber -Scope AllUsers -Repository PSGallery
-
-Write-Host "Checking execution policy..." -ForegroundColor Yellow
-
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop
-        Write-Host "Execution policy set to RemoteSigned" -ForegroundColor Green
-
