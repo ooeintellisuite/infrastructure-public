@@ -1,0 +1,246 @@
+---
+- name: Install Build Tools (Node.js, pnpm, Git)
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    # Platform-specific variables
+    is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+    is_windows: "{{ ansible_os_family == 'Windows' }}"
+    dev_user: '{{ ansible_user_id if is_ubuntu else ansible_user }}'
+    tools_dir: "{{ ansible_user_dir if is_windows else '/home/' + dev_user }}/dev-tools"
+
+  tasks:
+    - name: Display build tools installation start message
+      debug:
+        msg: 'Starting installation of build tools for {{ ansible_distribution }} {{ ansible_distribution_version }}...'
+
+    # Ubuntu-specific tasks
+    - block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            cache_valid_time: 3600
+          become: yes
+
+        - name: Install common prerequisites
+          apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
+              - software-properties-common
+              - wget
+              - build-essential
+            state: present
+          become: yes
+
+        # Git Installation
+        - name: Install Git (Ubuntu)
+          apt:
+            name: git
+            state: present
+          become: yes
+
+        - name: Configure Git user name (if not set)
+          shell: git config --global user.name || echo "Git user name not configured"
+          register: git_username
+          changed_when: false
+
+        - name: Configure Git user email (if not set)
+          shell: git config --global user.email || echo "Git user email not configured"
+          register: git_useremail
+          changed_when: false
+
+        # Node.js Installation using NodeSource repository for latest version
+        - name: Add NodeSource GPG key
+          shell: |
+            curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+            chmod a+r /etc/apt/keyrings/nodesource.gpg
+          args:
+            creates: /etc/apt/keyrings/nodesource.gpg
+          become: yes
+
+        - name: Add NodeSource repository
+          shell: |
+            echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+          args:
+            creates: /etc/apt/sources.list.d/nodesource.list
+          become: yes
+
+        - name: Update apt cache after adding NodeSource repo
+          apt:
+            update_cache: yes
+          become: yes
+
+        - name: Install Node.js (Ubuntu)
+          apt:
+            name:
+              - nodejs
+            state: present
+          become: yes
+
+        # pnpm Installation
+        - name: Install pnpm (Ubuntu)
+          npm:
+            name: pnpm
+            global: yes
+          become: yes
+
+        - name: Verify Node.js installation
+          command: node --version
+          register: node_version
+          changed_when: false
+
+        - name: Verify npm installation
+          command: npm --version
+          register: npm_version
+          changed_when: false
+
+        - name: Verify pnpm installation
+          command: pnpm --version
+          register: pnpm_version
+          changed_when: false
+
+        - name: Verify Git installation
+          command: git --version
+          register: git_version
+          changed_when: false
+
+        - name: Display installed versions (Ubuntu)
+          debug:
+            msg:
+              - 'Node.js version: {{ node_version.stdout }}'
+              - 'npm version: {{ npm_version.stdout }}'
+              - 'pnpm version: {{ pnpm_version.stdout }}'
+              - 'Git version: {{ git_version.stdout }}'
+
+      when: is_ubuntu
+
+    # Windows-specific tasks
+    - block:
+        # Check for Administrator privileges
+        - name: Check for Administrator privileges (Windows)
+          win_shell: |
+            $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+            if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+              Write-Error "This script must be run with Administrator privileges."
+              exit 1
+            }
+          when: is_windows
+
+        # Git Installation for Windows
+        - name: Download Git for Windows installer
+          win_get_url:
+            url: https://github.com/git-for-windows/git/releases/latest/download/Git-2.42.0-64-bit.exe
+            dest: "{{ tools_dir }}\\git-installer.exe"
+          when: is_windows
+
+        - name: Install Git for Windows
+          win_shell: |
+            Start-Process -FilePath "{{ tools_dir }}\\git-installer.exe" -ArgumentList "/VERYSILENT /NORESTART" -Wait
+          when: is_windows
+
+        # Node.js Installation for Windows
+        - name: Download Node.js installer for Windows
+          win_get_url:
+            url: https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi
+            dest: "{{ tools_dir }}\\nodejs-installer.msi"
+          when: is_windows
+
+        - name: Install Node.js (Windows)
+          win_shell: |
+            Start-Process -FilePath "msiexec.exe" -ArgumentList "/i {{ tools_dir }}\\nodejs-installer.msi /quiet /norestart" -Wait
+          when: is_windows
+
+        # pnpm Installation for Windows
+        - name: Install pnpm (Windows)
+          win_shell: npm install -g pnpm
+          when: is_windows
+
+        # NSSM Installation for Windows
+        - name: Download NSSM (Non-Sucking Service Manager)
+          win_get_url:
+            url: https://nssm.cc/release/nssm-2.24.zip
+            dest: "{{ tools_dir }}\\nssm-2.24.zip"
+          when: is_windows
+
+        - name: Create NSSM directory
+          win_file:
+            path: C:\nssm
+            state: directory
+          when: is_windows
+
+        - name: Extract NSSM
+          win_unzip:
+            src: "{{ tools_dir }}\\nssm-2.24.zip"
+            dest: C:\nssm
+          when: is_windows
+
+        - name: Add NSSM to system PATH
+          win_path:
+            elements:
+              - C:\nssm\nssm-2.24\win64
+            state: present
+          when: is_windows
+
+        - name: Verify Node.js installation (Windows)
+          win_shell: node --version
+          register: node_version_win
+          when: is_windows
+
+        - name: Verify npm installation (Windows)
+          win_shell: npm --version
+          register: npm_version_win
+          when: is_windows
+
+        - name: Verify pnpm installation (Windows)
+          win_shell: pnpm --version
+          register: pnpm_version_win
+          when: is_windows
+
+        - name: Verify Git installation (Windows)
+          win_shell: git --version
+          register: git_version_win
+          when: is_windows
+
+        - name: Display installed versions (Windows)
+          debug:
+            msg:
+              - 'Node.js version: {{ node_version_win.stdout }}'
+              - 'npm version: {{ npm_version_win.stdout }}'
+              - 'pnpm version: {{ pnpm_version_win.stdout }}'
+              - 'Git version: {{ git_version_win.stdout }}'
+          when: is_windows
+
+      when: is_windows
+
+    # Common tasks for both platforms
+    - name: Display build tools installation completion message
+      debug:
+        msg: 'Build tools installation completed for {{ ansible_distribution }} {{ ansible_distribution_version }}.'
+
+    - name: Create build tools installation summary
+      copy:
+        content: |
+          Build Tools Installation Summary
+          =================================
+          Platform: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Installed on: {{ ansible_date_time.iso8601 }}
+
+          Installed Tools:
+          - Node.js (JavaScript runtime)
+          - npm (Node.js package manager)
+          - pnpm (Fast, disk space efficient package manager)
+          - Git (Version control system)
+          {% if is_windows %}
+          - NSSM (Non-Sucking Service Manager) - Windows only
+          {% endif %}
+
+          Note: You may need to restart your terminal or system to use the installed tools.
+        dest: '{{ tools_dir }}/build-tools-summary.txt'
+        mode: '0644'
