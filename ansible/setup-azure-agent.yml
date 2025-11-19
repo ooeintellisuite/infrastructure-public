@@ -63,10 +63,3 @@
       ansible.builtin.command: ./svc.sh start
       args:
         chdir: '{{ agent_install_dir }}'
-      notify: Restart agent service
-
-  handlers:
-    - name: Restart agent service
-      ansible.builtin.systemd:
-        name: vstsagent.service # The service name configured by svc.sh
-        state: restarted
