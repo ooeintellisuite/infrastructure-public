@@ -54,10 +54,13 @@
         creates: '{{ agent_install_dir }}/.agent' # Check if config has run
       become: false
 
-    - name: Install and start agent as a service
-      ansible.builtin.command: |
-        ./svc.sh install
-        ./svc.sh start
+    - name: Install agent as a service
+      ansible.builtin.command: ./svc.sh install
+      args:
+        chdir: '{{ agent_install_dir }}'
+
+    - name: Start agent service
+      ansible.builtin.command: ./svc.sh start
       args:
         chdir: '{{ agent_install_dir }}'
       notify: Restart agent service
