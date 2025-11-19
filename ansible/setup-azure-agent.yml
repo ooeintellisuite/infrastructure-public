@@ -6,36 +6,36 @@
   become: true
 
   vars:
-    ado_org_url: 'https://dev.azure.com/oee-intellisuite'
-    agent_pool: 'Linux-Hosted'
+    ado_org_url: "https://dev.azure.com/oee-intellisuite"
+    agent_pool: "Linux-Hosted"
 
     # Variable for the Agent Version
     # THIS WILL LIKELY NEED TO BE UPDATED PERIODICALLY
-    agent_version: '4.264.2' # <-- Replace with the current agent version
+    agent_version: "4.264.2" # <-- Replace with the current agent version
 
     agent_name: "agent_{{ inventory_hostname | replace('.', '-') }}"
-    agent_install_dir: '/opt/vstsagent'
-    agent_download_url: 'https://download.agent.dev.azure.com/agent/{{ agent_version }}/vsts-agent-linux-x64-{{ agent_version }}.tar.gz'
+    agent_install_dir: "/opt/vstsagent"
+    agent_download_url: "https://download.agent.dev.azure.com/agent/{{ agent_version }}/vsts-agent-linux-x64-{{ agent_version }}.tar.gz"
 
   tasks:
     - name: Ensure agent directory exists
       ansible.builtin.file:
-        path: '{{ agent_install_dir }}'
+        path: "{{ agent_install_dir }}"
         state: directory
         owner: root
         group: root
-        mode: '0755'
+        mode: "0755"
 
     - name: Download agent package
       ansible.builtin.get_url:
-        url: '{{ agent_download_url }}'
-        dest: '{{ agent_install_dir }}/agent.tar.gz'
-        mode: '0644'
+        url: "{{ agent_download_url }}"
+        dest: "{{ agent_install_dir }}/agent.tar.gz"
+        mode: "0644"
 
     - name: Extract agent package
       ansible.builtin.unarchive:
-        src: '{{ agent_install_dir }}/agent.tar.gz'
-        dest: '{{ agent_install_dir }}'
+        src: "{{ agent_install_dir }}/agent.tar.gz"
+        dest: "{{ agent_install_dir }}"
         remote_src: yes
 
     - name: Configure the agent
@@ -50,29 +50,44 @@
           --replace \
           --acceptTeeEula
       args:
-        chdir: '{{ agent_install_dir }}'
-        creates: '{{ agent_install_dir }}/.agent' # Check if config has run
+        chdir: "{{ agent_install_dir }}"
+        creates: "{{ agent_install_dir }}/.agent" # Check if config has run
       become: false
 
-    - name: Check if agent service is already installed
-      ansible.builtin.stat:
-        path: "/etc/systemd/system/vsts.agent.{{ ado_org_url | regex_replace('https://dev.azure.com/', '') | regex_replace('/', '.') }}.{{ agent_pool }}.{{ agent_name }}.service"
-      register: agent_service_file
+    - name: Find existing agent service files
+      ansible.builtin.find:
+        paths: "/etc/systemd/system"
+        patterns: "vsts.agent.{{ ado_org_url | regex_replace('https://dev.azure.com/', '') | regex_replace('/', '.') }}.{{ agent_pool }}.{{ agent_name }}.service"
+        use_regex: false
+      register: existing_services
+
+    - name: Stop and remove existing agent services
+      ansible.builtin.systemd:
+        name: "{{ item.path | basename }}"
+        state: stopped
+        enabled: no
+      loop: "{{ existing_services.files }}"
+      when: existing_services.files | length > 0
+      ignore_errors: yes
+
+    - name: Remove existing agent service files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ existing_services.files }}"
+      when: existing_services.files | length > 0
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+      when: existing_services.files | length > 0
 
     - name: Install agent as a service
       ansible.builtin.command: ./svc.sh install
       args:
-        chdir: '{{ agent_install_dir }}'
-      when: not agent_service_file.stat.exists
-
-    - name: Check if agent service is running
-      ansible.builtin.systemd:
-        name: "vsts.agent.{{ ado_org_url | regex_replace('https://dev.azure.com/', '') | regex_replace('/', '.') }}.{{ agent_pool }}.{{ agent_name }}.service"
-      register: service_status
-      failed_when: false
+        chdir: "{{ agent_install_dir }}"
 
     - name: Start agent service
       ansible.builtin.command: ./svc.sh start
       args:
-        chdir: '{{ agent_install_dir }}'
-      when: service_status.status is not defined or service_status.status.ActiveState != "active"
+        chdir: "{{ agent_install_dir }}"
