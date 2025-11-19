@@ -53,6 +53,8 @@
         chdir: "{{ agent_install_dir }}"
         creates: "{{ agent_install_dir }}/.agent" # Check if config has run
       become: false
+      environment:
+        VSTS_AGENT_HTTP_TIMEOUT: "300"
 
     - name: Find all vsts agent service files
       ansible.builtin.find:
