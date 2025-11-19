@@ -6,7 +6,7 @@
   become: true
 
   vars:
-    ado_org_url: 'https://dev.azure.com/oee-intellisuite/oee-intellisuite'
+    ado_org_url: 'https://dev.azure.com/oee-intellisuite'
     agent_pool: 'Linux-Hosted'
 
     # Variable for the Agent Version
