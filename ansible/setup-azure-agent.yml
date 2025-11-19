@@ -54,11 +54,11 @@
         creates: "{{ agent_install_dir }}/.agent" # Check if config has run
       become: false
 
-    - name: Find existing agent service files
+    - name: Find all vsts agent service files
       ansible.builtin.find:
         paths: "/etc/systemd/system"
-        patterns: "vsts.agent.{{ ado_org_url | regex_replace('https://dev.azure.com/', '') | regex_replace('/', '.') }}.{{ agent_pool }}.{{ agent_name }}.service"
-        use_regex: false
+        patterns: "^vsts\\.agent\\..*\\.service$"
+        use_regex: true
       register: existing_services
 
     - name: Stop and remove existing agent services
