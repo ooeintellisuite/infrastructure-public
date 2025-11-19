@@ -1,7 +1,8 @@
 ---
 - name: Setup Azure DevOps Agent
-  hosts: azure_agent
-  become: true # Run tasks with elevated privileges
+  hosts: localhost
+  connection: local
+  gather_facts: yes
 
   vars:
     ado_org_url: 'https://dev.azure.com/oee-intellisuite/oee-intellisuite'
