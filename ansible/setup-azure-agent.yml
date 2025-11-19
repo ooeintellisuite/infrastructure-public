@@ -4,36 +4,36 @@
   become: true # Run tasks with elevated privileges
 
   vars:
-    ado_org_url: "https://dev.azure.com/oee-intellisuite/oee-intellisuite"
-    agent_pool: "default"
+    ado_org_url: 'https://dev.azure.com/oee-intellisuite/oee-intellisuite'
+    agent_pool: 'Linux-Hosted'
 
     # Variable for the Agent Version
     # THIS WILL LIKELY NEED TO BE UPDATED PERIODICALLY
-    agent_version: "4.254.0" # <-- Replace with the current agent version
+    agent_version: '4.254.0' # <-- Replace with the current agent version
 
     agent_name: "agent_{{ inventory_hostname | replace('.', '-') }}"
-    agent_install_dir: "/opt/vstsagent"
-    agent_download_url: "https://vstsagentpackage.azureedge.net/agent/{{ agent_version }}/vsts-agent-linux-x64-{{ agent_version }}.tar.gz"
+    agent_install_dir: '/opt/vstsagent'
+    agent_download_url: 'https://vstsagentpackage.azureedge.net/agent/{{ agent_version }}/vsts-agent-linux-x64-{{ agent_version }}.tar.gz'
 
   tasks:
     - name: Ensure agent directory exists
       ansible.builtin.file:
-        path: "{{ agent_install_dir }}"
+        path: '{{ agent_install_dir }}'
         state: directory
         owner: root
         group: root
-        mode: "0755"
+        mode: '0755'
 
     - name: Download agent package
       ansible.builtin.get_url:
-        url: "{{ agent_download_url }}"
-        dest: "{{ agent_install_dir }}/agent.tar.gz"
-        mode: "0644"
+        url: '{{ agent_download_url }}'
+        dest: '{{ agent_install_dir }}/agent.tar.gz'
+        mode: '0644'
 
     - name: Extract agent package
       ansible.builtin.unarchive:
-        src: "{{ agent_install_dir }}/agent.tar.gz"
-        dest: "{{ agent_install_dir }}"
+        src: '{{ agent_install_dir }}/agent.tar.gz'
+        dest: '{{ agent_install_dir }}'
         remote_src: yes
 
     - name: Configure the agent
@@ -48,15 +48,15 @@
           --replace \
           --acceptTeeEula
       args:
-        chdir: "{{ agent_install_dir }}"
-        creates: "{{ agent_install_dir }}/.agent" # Check if config has run
+        chdir: '{{ agent_install_dir }}'
+        creates: '{{ agent_install_dir }}/.agent' # Check if config has run
 
     - name: Install and start agent as a service
       ansible.builtin.command: |
         ./svc.sh install
         ./svc.sh start
       args:
-        chdir: "{{ agent_install_dir }}"
+        chdir: '{{ agent_install_dir }}'
       notify: Restart agent service
 
   handlers:

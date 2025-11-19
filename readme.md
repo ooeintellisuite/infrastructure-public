@@ -29,8 +29,10 @@ sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github
 ## Azure DevOps Agent Setup
 
 ```bash
-ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main -i ansible/inventory -e "azure_devops_pat=" -e "agent_pool=Linux-Hosted" ansible/setup-azure-agent.yml
+ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main -i ansible/inventory -e "azure_devops_pat="  ansible/setup-azure-agent.yml
 ```
+
+Use `-e "agent_pool=Linux-Hosted"` if wanting to override the agent pool
 
 # Windows PowerShell Scripts
 
