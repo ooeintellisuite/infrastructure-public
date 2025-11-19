@@ -26,6 +26,12 @@ sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github
 sudo apt update && sudo apt install -y ansible && ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git   -C main   -i ansible/inventory     ansible/powershell-install.yml
 ```
 
+## Azure DevOps Agent Setup
+
+```bash
+ansible-pull -U https://github.com/ooeintellisuite/infrastructure-public.git -C main -i ansible/inventory -e "azure_devops_pat=" -e "agent_pool=Linux-Hosted" ansible/setup-azure-agent.yml
+```
+
 # Windows PowerShell Scripts
 
 ## Enable Remote Desktop Protocol (RDP)
