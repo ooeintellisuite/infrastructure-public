@@ -218,29 +218,3 @@
           when: is_windows
 
       when: is_windows
-
-    # Common tasks for both platforms
-    - name: Display build tools installation completion message
-      debug:
-        msg: 'Build tools installation completed for {{ ansible_distribution }} {{ ansible_distribution_version }}.'
-
-    - name: Create build tools installation summary
-      copy:
-        content: |
-          Build Tools Installation Summary
-          =================================
-          Platform: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Installed on: {{ ansible_date_time.iso8601 }}
-
-          Installed Tools:
-          - Node.js (JavaScript runtime)
-          - npm (Node.js package manager)
-          - pnpm (Fast, disk space efficient package manager)
-          - Git (Version control system)
-          {% if is_windows %}
-          - NSSM (Non-Sucking Service Manager) - Windows only
-          {% endif %}
-
-          Note: You may need to restart your terminal or system to use the installed tools.
-        dest: '{{ tools_dir }}/build-tools-summary.txt'
-        mode: '0644'
