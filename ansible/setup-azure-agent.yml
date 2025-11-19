@@ -3,6 +3,7 @@
   hosts: localhost
   connection: local
   gather_facts: yes
+  become: true
 
   vars:
     ado_org_url: 'https://dev.azure.com/oee-intellisuite/oee-intellisuite'
@@ -10,7 +11,7 @@
 
     # Variable for the Agent Version
     # THIS WILL LIKELY NEED TO BE UPDATED PERIODICALLY
-    agent_version: '4.254.0' # <-- Replace with the current agent version
+    agent_version: '4.264.2' # <-- Replace with the current agent version
 
     agent_name: "agent_{{ inventory_hostname | replace('.', '-') }}"
     agent_install_dir: '/opt/vstsagent'
