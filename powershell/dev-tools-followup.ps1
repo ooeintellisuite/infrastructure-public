@@ -4,6 +4,10 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
+# Install node-gyp (required for native modules like sqlite3)
+Write-Host "Installing node-gyp..." -ForegroundColor Green
+npm install -g node-gyp
+
 # Install pnpm
 Write-Host "Installing pnpm..." -ForegroundColor Green
 npm install -g pnpm

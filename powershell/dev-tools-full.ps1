@@ -61,6 +61,10 @@ choco install postman -y
 Write-Host "Installing Visual Studio Code..." -ForegroundColor Green
 choco install vscode -y
 
+# Install Visual Studio Build Tools with C++ workload (required for native modules)
+Write-Host "Installing Visual Studio Build Tools with C++ workload..." -ForegroundColor Green
+choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended" -y
+
 # Install Azure Data Studio
 Write-Host "Installing Azure Data Studio..." -ForegroundColor Green
 choco install azure-data-studio -y
